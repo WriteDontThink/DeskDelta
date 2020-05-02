@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+enum MessageType {
+   cursor = 0;
+   content = 1;
+}
+
+enum CursorOpType {
+    MoveOneRight = 0;
+    MoveOneLeft = 1;
+    MoveToIndex = 2;
+    Select = 3;
+}
+
+enum ContentOpType {
+    InsertOne = 0;
+    DeleteOne = 1;
+    DeleteSelection = 2;
+    InsertMany = 3;
+}
+
+message CursorOperation{
+
+}
+
+message ContentOperation{
+
+}
+
+message Operation {
+    MessageType messageType = 1;
+    int32 pageNum = 2;
+    oneof messageContent {
+        CursorOperation cursorOp = 3;
+        ContentOperation contentOp = 4;
+    }
+}
