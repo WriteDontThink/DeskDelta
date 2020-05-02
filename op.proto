@@ -1,37 +1,136 @@
 syntax = "proto3";
 
-enum MessageType {
-   cursor = 0;
-   content = 1;
+// Generically represent a start index and an end index
+message IndexBoundary {
+    int32 start = 8;
+    int32 end = 9;
 }
 
-enum CursorOpType {
-    MoveOneRight = 0;
-    MoveOneLeft = 1;
-    MoveToIndex = 2;
-    Select = 3;
-}
-
-enum ContentOpType {
-    InsertOne = 0;
-    DeleteOne = 1;
-    DeleteSelection = 2;
-    InsertMany = 3;
-}
-
+// Cursors being moved around
 message CursorOperation{
 
+    enum CursorOpType {
+        MoveOneRight = 0;
+        MoveOneLeft = 1;
+        MoveToIndex = 2;
+        Select = 3;
+    }
+    CursorOpType cursorOpType = 6;
+    IndexBoundary cursorIndex = 10;
 }
 
+// Content being changed on the page
 message ContentOperation{
+    enum ContentOpType {
+        InsertOne = 0;
+        DeleteOne = 1;
+        DeleteSelection = 2;
+        InsertMany = 3;
+    }
+    ContentOpType contentOpType = 7;
+    string data = 11;
+}
 
+// Users joining and leaving
+message UserOperation {
+    enum UserOpType {
+        Connect = 0;
+        Disconnect = 1;
+    }
+    UserOpType userOpType;
+    map<string, string> userInfo;
+}
+
+// Pages being added and deleted
+message PageOperation {
+    enum PageOpType {
+        Create = 0;
+        Delete = 1;
+    }
+    PageOpType pageOpType;
+}
+
+
+message MetaOperation {
+    enum MetaOpType {
+        Title = 0;
+    }
+    MetaOpType metaOpType;
+}
+
+message FormatOperation {
+    enum FormatOpType {
+        Create = 0;
+        Delete = 1;
+    }
+    enum FormatMessageVariant {
+        Intelligence = 0;
+        Visual = 1;
+    }
+    enum FormatBoundary {
+        Word = 0;
+        Page = 1;
+        Index = 2;
+    }
+    FormatOpType formatOpType = 12;
+    FormatMessageVariant variant = 13;
+
+    // A format can be tied to the end of the word (the client will automatically extend it to the next space),
+    // to a given index, or to the end of a page.
+    FormatBoundary boundaryType = 14;
+    oneof boundary {
+        IndexBoundary indexBoundary = 15;
+
+    }
+
+    message IntelligenceFormat {
+        // A unique identifier for a piece of intelligence in the knowledge graph. This can be looked
+        // up by the client whenever needed.
+        int32 intelligenceId;
+    }
+    message VisualFormat {
+        // The name for a format, like "bold", or "font"
+        string format;
+        // Any required attributes, like {"font-family": "Arial"}
+        map<string, string> formatAttributes;
+    }
+    oneof formatContent {
+        IntelligenceFormat intelligence;
+        VisualFormat visual;
+    }
 }
 
 message Operation {
+    enum MessageType {
+        CursorMessage = 0;
+        ContentMessage = 1;
+        UserMessage = 2;
+        PageMessage = 3;
+        MetaMessage = 4;
+        FormatMessage = 5;
+    }
+    // The type of message that's been received
     MessageType messageType = 1;
+    // What page the message occurred on
     int32 pageNum = 2;
+    // What user created the message. (User 0 will be reserved for the server, all others will increment as they join
+    int32 user = 3;
+    // What content does the message contain?
     oneof messageContent {
-        CursorOperation cursorOp = 3;
-        ContentOperation contentOp = 4;
+        // An operation representing cursor movement
+        CursorOperation cursorOp = 4;
+        // An operation representing text being changed on the page
+        ContentOperation contentOp = 5;
+
+        // An operation representing text being formatted or tagged on the page
+        FormatOperation formatOp = 12;
+
+        // Put page and meta operations all in higher field nums, because they're less frequent so bit conservation
+        // isn't really necessary
+
+        // An operation representing a page being created or deleted
+        PageOperation pageOp;
+        // An operation representing metadata, like the title of the document, changing on the page
+        MetaOperation metaOp;
     }
 }
