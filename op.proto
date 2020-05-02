@@ -1,4 +1,7 @@
 syntax = "proto3";
+package deskDelta;
+option go_package = "github.com/WriteDontThink/DeskDelta/definitions/go/deskdelta";
+
 
 // Generically represent a start index and an end index
 message IndexBoundary {
@@ -37,8 +40,8 @@ message UserOperation {
         Connect = 0;
         Disconnect = 1;
     }
-    UserOpType userOpType;
-    map<string, string> userInfo;
+    UserOpType userOpType = 24;
+    map<string, string> userInfo = 25;
 }
 
 // Pages being added and deleted
@@ -47,7 +50,7 @@ message PageOperation {
         Create = 0;
         Delete = 1;
     }
-    PageOpType pageOpType;
+    PageOpType pageOpType = 26;
 }
 
 
@@ -55,7 +58,7 @@ message MetaOperation {
     enum MetaOpType {
         Title = 0;
     }
-    MetaOpType metaOpType;
+    MetaOpType metaOpType = 27;
 }
 
 message FormatOperation {
@@ -64,7 +67,7 @@ message FormatOperation {
         Delete = 1;
     }
     enum FormatMessageVariant {
-        Intelligence = 0;
+        Data = 0;
         Visual = 1;
     }
     enum FormatBoundary {
@@ -78,25 +81,26 @@ message FormatOperation {
     // A format can be tied to the end of the word (the client will automatically extend it to the next space),
     // to a given index, or to the end of a page.
     FormatBoundary boundaryType = 14;
-    oneof boundary {
-        IndexBoundary indexBoundary = 15;
 
-    }
+    // If the format boundary is a word or an index, it can be represented by a start and end index. In the case
+    // of an index, this will stay constant regardless of the content, but in the case of a word, it will be adapted
+    // by space matching
+    IndexBoundary boundaryData = 15;
 
-    message IntelligenceFormat {
-        // A unique identifier for a piece of intelligence in the knowledge graph. This can be looked
+    message DataFormat {
+        // A unique identifier for a piece of data in the system. This can be looked
         // up by the client whenever needed.
-        int32 intelligenceId;
+        int32 dataId = 16;
     }
     message VisualFormat {
         // The name for a format, like "bold", or "font"
-        string format;
+        string format = 17;
         // Any required attributes, like {"font-family": "Arial"}
-        map<string, string> formatAttributes;
+        map<string, string> formatAttributes = 18;
     }
     oneof formatContent {
-        IntelligenceFormat intelligence;
-        VisualFormat visual;
+        DataFormat data = 19;
+        VisualFormat visual = 20;
     }
 }
 
@@ -125,12 +129,14 @@ message Operation {
         // An operation representing text being formatted or tagged on the page
         FormatOperation formatOp = 12;
 
-        // Put page and meta operations all in higher field nums, because they're less frequent so bit conservation
-        // isn't really necessary
+        // Put page, user, and meataoperations all in higher field nums, because they're less frequent
+        // so bit conservation isn't really necessary
 
         // An operation representing a page being created or deleted
-        PageOperation pageOp;
+        PageOperation pageOp = 21;
+        // An operation representing a user connecting or disconnecting to the document
+        UserOperation userOp = 22;
         // An operation representing metadata, like the title of the document, changing on the page
-        MetaOperation metaOp;
+        MetaOperation metaOp = 23;
     }
 }
